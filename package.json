@@ -1,0 +1,26 @@
+{
+  "name": "bwd2",
+  "version": "2.0.0",
+  "main": "src/index.js",
+  "description": "blackwidow reimagined",
+  "author": "Anton Verinov <anton@verinov.com>",
+  "license": "MIT",
+  "dependencies": {
+    "css-polyfills": "FremyCompany/css-grid-polyfill",
+    "drag-drop-webkit-mobile": "^1.2.0",
+    "mithril": "^1.0.1"
+  },
+  "devDependencies": {
+    "minimist": "^1.2.0",
+    "rollup": "^0.41.4",
+    "rollup-plugin-commonjs": "^7.0.0",
+    "rollup-plugin-livereload": "^0.4.0",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-serve": "^0.1.0",
+    "rollup-watch": "^3.2.2"
+  },
+  "scripts": {
+    "rollup": "rollup -c",
+    "postinstall": "rollup -c"
+  }
+}
