@@ -52,7 +52,7 @@ function calculateNewWidget(e) {
   } else if (state.newWidget.startRow == placeholderRow) {
     potentialNewWidget.rows = [
       parseInt(placeholderRow),
-      parseInt(placeholderRow),
+      parseInt(placeholderRow) + 1,
     ]
   } else if (state.newWidget.startRow > placeholderRow) {
     potentialNewWidget.rows = [
@@ -69,7 +69,7 @@ function calculateNewWidget(e) {
   } else if (state.newWidget.startColumn == placeholderColumn) {
     potentialNewWidget.columns = [
       parseInt(placeholderColumn),
-      parseInt(placeholderColumn),
+      parseInt(placeholderColumn) + 1,
     ]
   } else if (state.newWidget.startColumn > placeholderColumn) {
     potentialNewWidget.columns = [
@@ -78,9 +78,10 @@ function calculateNewWidget(e) {
     ]
   }
 
-  for (let i = potentialNewWidget.rows[0]; i < potentialNewWidget.rows[1]; i++) {
-    for (let j = potentialNewWidget.columns[0]; j < potentialNewWidget.columns[1]; j++) {
-      if (state.occupied && state.occupied[i - 1][j - 1]) {
+  for (let i = potentialNewWidget.rows[0] - 1; i < potentialNewWidget.rows[1] - 1; i++) {
+    for (let j = potentialNewWidget.columns[0] - 1; j < potentialNewWidget.columns[1] - 1; j++) {
+      if (state.occupied && state.occupied[i] && state.occupied[i][j]) {
+        m.redraw()
         return
       }
     }
