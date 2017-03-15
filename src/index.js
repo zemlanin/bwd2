@@ -23,6 +23,88 @@ const state = {
   newWidget: null,
 }
 
+function calculateNewWidget(e) {
+  if (e.which != 1) {
+    if (state.newWidget) {
+      state.newWidget = null
+    }
+    return
+  }
+
+  if (!state.newWidget) {
+    return
+  }
+
+  const placeholderRow = e.target.dataset.placeholderRow
+  const placeholderColumn = e.target.dataset.placeholderColumn
+
+  if (state.newWidget.startRow < placeholderRow) {
+    state.newWidget.rows = [
+      state.newWidget.startRow,
+      parseInt(placeholderRow) + 1,
+    ]
+  } else if (state.newWidget.startRow == placeholderRow) {
+    state.newWidget.rows = [
+      parseInt(placeholderRow),
+      parseInt(placeholderRow),
+    ]
+  } else if (state.newWidget.startRow > placeholderRow) {
+    state.newWidget.rows = [
+      parseInt(placeholderRow),
+      state.newWidget.startRow + 1,
+    ]
+  }
+
+  if (state.newWidget.startColumn < placeholderColumn) {
+    state.newWidget.columns = [
+      state.newWidget.startColumn,
+      parseInt(placeholderColumn) + 1,
+    ]
+  } else if (state.newWidget.startColumn == placeholderColumn) {
+    state.newWidget.columns = [
+      parseInt(placeholderColumn),
+      parseInt(placeholderColumn),
+    ]
+  } else if (state.newWidget.startColumn > placeholderColumn) {
+    state.newWidget.columns = [
+      parseInt(placeholderColumn),
+      state.newWidget.startColumn + 1,
+    ]
+  }
+
+  m.redraw()
+}
+
+function startNewWidget (e) {
+  if (state.newWidget) {
+    state.newWidget = null
+    return
+  }
+
+  const r = parseInt(e.target.dataset.placeholderRow)
+  const c = parseInt(e.target.dataset.placeholderColumn)
+
+  state.newWidget = {
+    rows: [r, r],
+    columns: [c, c],
+    startRow: r,
+    startColumn: c,
+  }
+}
+
+function finishNewWidget (e) {
+  if (!state.newWidget) {
+    return
+  }
+
+  state.widgets.push({
+    row: state.newWidget.rows.join('/'),
+    column: state.newWidget.columns.join('/'),
+    text: state.newWidget.rows.join('/') + ':' + state.newWidget.columns.join('/')
+  })
+  state.newWidget = null
+}
+
 function generatePlaceholders (state) {
   const placeholders = []
   const occupied = Array.from({length: SIZE_ROWS}, () =>
@@ -68,67 +150,9 @@ function generatePlaceholders (state) {
         backgroundColor: 'rgba(255,0,0,0.2)',
         cursor: 'pointer',
       },
-      onmouseenter: (e) => {
-        if (!state.newWidget) {
-          return
-        }
-
-        const placeholderRow = e.target.dataset.placeholderRow
-        const placeholderColumn = e.target.dataset.placeholderColumn
-
-        if (state.newWidget.startRow < placeholderRow) {
-          state.newWidget.rows = [
-            state.newWidget.startRow,
-            parseInt(placeholderRow) + 1,
-          ]
-        } else if (state.newWidget.startRow == placeholderRow) {
-          state.newWidget.rows = [
-            parseInt(placeholderRow),
-            parseInt(placeholderRow),
-          ]
-        } else if (state.newWidget.startRow > placeholderRow) {
-          state.newWidget.rows = [
-            parseInt(placeholderRow),
-            state.newWidget.startRow + 1,
-          ]
-        }
-
-        if (state.newWidget.startColumn < placeholderColumn) {
-          state.newWidget.columns = [
-            state.newWidget.startColumn,
-            parseInt(placeholderColumn) + 1,
-          ]
-        } else if (state.newWidget.startColumn == placeholderColumn) {
-          state.newWidget.columns = [
-            parseInt(placeholderColumn),
-            parseInt(placeholderColumn),
-          ]
-        } else if (state.newWidget.startColumn > placeholderColumn) {
-          state.newWidget.columns = [
-            parseInt(placeholderColumn),
-            state.newWidget.startColumn + 1,
-          ]
-        }
-
-        m.redraw()
-      },
-      onmousedown: (e) => {
-        state.newWidget = {
-          rows: [r + 1, r + 1],
-          columns: [c + 1, c + 1],
-          startRow: r + 1,
-          startColumn: c + 1,
-        }
-      },
-      onmouseup: (e) => {
-        console.log(state.newWidget)
-        state.widgets.push({
-          row: state.newWidget.rows.join('/'),
-          column: state.newWidget.columns.join('/'),
-          text: state.newWidget.rows.join('/') + ':' + state.newWidget.columns.join('/')
-        })
-        state.newWidget = null
-      },
+      onmouseenter: calculateNewWidget,
+      onmousedown: startNewWidget,
+      onmouseup: finishNewWidget,
       ondragstart: e => e.preventDefault(),
     }
   )))
