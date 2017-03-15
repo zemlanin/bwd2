@@ -21,6 +21,7 @@ const state = {
   ],
   visibleGaps: true,
   newWidget: null,
+  occupied: null,
 }
 
 function calculateNewWidget(e) {
@@ -38,39 +39,55 @@ function calculateNewWidget(e) {
   const placeholderRow = e.target.dataset.placeholderRow
   const placeholderColumn = e.target.dataset.placeholderColumn
 
+  const potentialNewWidget = {
+    rows: [],
+    columns: [],
+  }
+
   if (state.newWidget.startRow < placeholderRow) {
-    state.newWidget.rows = [
+    potentialNewWidget.rows = [
       state.newWidget.startRow,
       parseInt(placeholderRow) + 1,
     ]
   } else if (state.newWidget.startRow == placeholderRow) {
-    state.newWidget.rows = [
+    potentialNewWidget.rows = [
       parseInt(placeholderRow),
       parseInt(placeholderRow),
     ]
   } else if (state.newWidget.startRow > placeholderRow) {
-    state.newWidget.rows = [
+    potentialNewWidget.rows = [
       parseInt(placeholderRow),
       state.newWidget.startRow + 1,
     ]
   }
 
   if (state.newWidget.startColumn < placeholderColumn) {
-    state.newWidget.columns = [
+    potentialNewWidget.columns = [
       state.newWidget.startColumn,
       parseInt(placeholderColumn) + 1,
     ]
   } else if (state.newWidget.startColumn == placeholderColumn) {
-    state.newWidget.columns = [
+    potentialNewWidget.columns = [
       parseInt(placeholderColumn),
       parseInt(placeholderColumn),
     ]
   } else if (state.newWidget.startColumn > placeholderColumn) {
-    state.newWidget.columns = [
+    potentialNewWidget.columns = [
       parseInt(placeholderColumn),
       state.newWidget.startColumn + 1,
     ]
   }
+
+  for (let i = potentialNewWidget.rows[0]; i < potentialNewWidget.rows[1]; i++) {
+    for (let j = potentialNewWidget.columns[0]; j < potentialNewWidget.columns[1]; j++) {
+      if (state.occupied && state.occupied[i - 1][j - 1]) {
+        return
+      }
+    }
+  }
+
+  state.newWidget.rows = potentialNewWidget.rows
+  state.newWidget.columns = potentialNewWidget.columns
 
   m.redraw()
 }
@@ -136,6 +153,8 @@ function generatePlaceholders (state) {
       }
     }
   }
+
+  state.occupied = occupied
 
   return occupied.map((o, r) => o.map((o_, c) => o_ ? null : m(
     'div',
