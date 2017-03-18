@@ -1,2 +1,4 @@
 node_modules
 build/out.js
+.DS_Store
+npm-debug.log

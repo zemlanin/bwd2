@@ -9,19 +9,24 @@ const SIZE_ROWS = 10
 const state = {
   widgets: [
     {
+      id: '8ed1cf7f-b5c9-4750-acd7-df459725096d',
       text: 'lorem ipsum',
       row: '1',
       column: '1 / 4',
+      script: '/worker.js',
     },
     {
+      id: 'cda628b0-e2a9-4033-a681-175e23371e8e',
       text: 'lorem ipsum',
       row: '2 / 5',
       column: '3',
+      script: '/worker.js',
     },
   ],
-  visibleGaps: true,
+  editMode: false,
   newWidget: null,
   occupied: null,
+  workers: []
 }
 
 function calculateNewWidget(e) {
@@ -110,16 +115,44 @@ function startNewWidget (e) {
   }
 }
 
+function registerWorker (widget) {
+  if (widget.script && !state.workers.find(worker => worker.id == widget.id)) {
+    const worker = new Worker(widget.script)
+
+    state.workers.push({
+      id: widget.id,
+      worker: worker,
+    })
+
+    worker.onmessage = ({data}) => {
+      switch (data.topic) {
+        case 'view':
+          widget.text = data.payload
+          m.redraw()
+      }
+    }
+
+    worker.postMessage({
+      topic: 'init',
+    })
+  }
+}
+
 function finishNewWidget (e) {
   if (!state.newWidget) {
     return
   }
 
-  state.widgets.push({
+  const newWidget = {
+    id: Math.random().toString(),
     row: state.newWidget.rows.join('/'),
     column: state.newWidget.columns.join('/'),
-    text: state.newWidget.rows.join('/') + ':' + state.newWidget.columns.join('/')
-  })
+    text: state.newWidget.rows.join('/') + ':' + state.newWidget.columns.join('/'),
+    script: '/worker.js',
+  }
+
+  state.widgets.push(newWidget)
+  registerWorker(newWidget)
   state.newWidget = null
 }
 
@@ -178,7 +211,66 @@ function generatePlaceholders (state) {
   )))
 }
 
+const Widget = {
+  view: ({attrs}) => {
+    return m('div',
+      {style: {
+        gridColumn: attrs.column,
+        gridRow: attrs.row,
+        outline: '1px solid black',
+        overflow: 'hidden',
+        display: 'grid',
+        gridTemplateColumns: `1fr`,
+        gridTemplateRows: `1fr`,
+      }},
+      m('div',
+        {
+          key: 'view',
+          style: {
+            gridRow: 1,
+            gridColumn: 1,
+            filter: state.editMode ? 'blur(5px)' : null,
+            zIndex: 1,
+          }
+        },
+        attrs.text
+      ),
+      state.editMode ? m('div',
+        {
+          key: 'editActions',
+          style: {
+            backgroundColor: 'rgba(0,0,0,0.1)',
+            gridRow: 1,
+            gridColumn: 1,
+            zIndex: 2,
+          }
+        },
+        m('button', {
+          onclick: () => {
+            const worker = state.workers.find(w => w.id === attrs.id)
+
+            if (worker) {
+              worker.worker.postMessage({topic: 'close'})
+              setTimeout(() => {
+                worker.worker.terminate()
+                state.workers = state.workers.filter(w => w.id !== attrs.id)
+              }, 1000)
+            }
+
+            state.widgets = state.widgets.filter(w => w.id !== attrs.id)
+          }
+        }, 'delete')
+      ) : null
+    )
+  }
+}
+
 const app = {
+  oninit: () => {
+    for (const w of state.widgets) {
+      registerWorker(w)
+    }
+  },
   view: () => {
     return m('div',
       {style: {
@@ -202,18 +294,10 @@ const app = {
         },
         'new'
       ) : null,
-      state.visibleGaps ? generatePlaceholders(state) : [],
-      state.widgets.map((w, i) =>
-        m('div',
-          {style: {
-            gridColumn: w.column,
-            gridRow: w.row,
-            outline: '1px solid black',
-            overflow: 'auto',
-          }},
-          w.text
-        )
-      ),
+      state.editMode ? generatePlaceholders(state) : [],
+      state.widgets.map((w) => {
+        return m(Widget, Object.assign({key: w.id}, w))
+      }),
       m('div',
         {
           style: {
@@ -223,10 +307,9 @@ const app = {
             textAlign: 'center',
             cursor: 'pointer',
             paddingTop: 'calc(5vh - 1em)',
-            color: state.visibleGaps ? 'red' : 'black',
-            backgroundColor: state.visibleGaps ? 'transparent' : 'red',
+            color: state.editMode ? 'red' : 'black',
           },
-          onclick: () => state.visibleGaps = !state.visibleGaps,
+          onclick: () => state.editMode = !state.editMode,
         },
         'edit'
       )
