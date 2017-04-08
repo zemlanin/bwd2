@@ -211,6 +211,82 @@ function generatePlaceholders (state) {
   )))
 }
 
+const EditView = {
+  view: ({attrs}) => {
+    return m('div',
+      {
+        key: 'editActions',
+        style: {
+          backgroundColor: 'rgba(0,0,0,0.1)',
+          gridRow: 1,
+          gridColumn: 1,
+          zIndex: 2,
+        }
+      },
+      m('button', {
+        style: {margin: '1em'},
+        onclick: () => {
+          const worker = state.workers.find(w => w.id === attrs.id)
+
+          if (worker) {
+            worker.worker.postMessage({topic: 'close'})
+            setTimeout(() => {
+              worker.worker.terminate()
+              state.workers = state.workers.filter(w => w.id !== attrs.id)
+            }, 1000)
+          }
+
+          state.widgets = state.widgets.filter(w => w.id !== attrs.id)
+        }
+      }, 'delete'),
+      m('button', {
+        style: {margin: '1em'},
+        onclick: () => {
+          const worker = state.workers.find(w => w.id === attrs.id)
+
+          if (worker) {
+            worker.worker.postMessage({topic: 'refresh'})
+          }
+        }
+      }, 'refresh'),
+      m('form', {
+        action: '',
+        onsubmit: (event) => {
+          event.preventDefault()
+
+          if (!event.target.url.value) {
+            return
+          }
+
+          const worker = state.workers.find(w => w.id === attrs.id)
+
+          if (worker) {
+            worker.worker.postMessage({
+              topic: 'fetch',
+              payload: {
+                url: event.target.url.value,
+                selector: event.target.selector.value,
+              }
+            })
+          }
+        }
+      },
+        m('input', {
+          style: {margin: '1em'},
+          value: 'https://api.github.com/zen',
+          name: 'url'
+        }),
+        m('input', {
+          style: {margin: '1em'},
+          value: '',
+          name: 'selector'
+        }),
+        m('input[type=submit]')
+      )
+    )
+  }
+}
+
 const Widget = {
   view: ({attrs}) => {
     return m('div',
@@ -235,32 +311,7 @@ const Widget = {
         },
         attrs.text
       ),
-      state.editMode ? m('div',
-        {
-          key: 'editActions',
-          style: {
-            backgroundColor: 'rgba(0,0,0,0.1)',
-            gridRow: 1,
-            gridColumn: 1,
-            zIndex: 2,
-          }
-        },
-        m('button', {
-          onclick: () => {
-            const worker = state.workers.find(w => w.id === attrs.id)
-
-            if (worker) {
-              worker.worker.postMessage({topic: 'close'})
-              setTimeout(() => {
-                worker.worker.terminate()
-                state.workers = state.workers.filter(w => w.id !== attrs.id)
-              }, 1000)
-            }
-
-            state.widgets = state.widgets.filter(w => w.id !== attrs.id)
-          }
-        }, 'delete')
-      ) : null
+      state.editMode ? m(EditView, {id: attrs.id}) : null
     )
   }
 }

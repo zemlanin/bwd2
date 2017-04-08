@@ -1,4 +1,5 @@
 node_modules
 build/out.js
+build/worker.js
 .DS_Store
 npm-debug.log
